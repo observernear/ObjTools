@@ -8,6 +8,7 @@ import com.cgvsu.util.FileCompareObj;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 public class Main {
 
@@ -21,14 +22,14 @@ public class Main {
         System.out.println("Loading model ...");
         Model model = ObjReader.read(fileContent);
 
-        System.out.println("Vertices: " + model.vertices.size());
-        System.out.println("Texture vertices: " + model.textureVertices.size());
-        System.out.println("Normals: " + model.normals.size());
-        System.out.println("Polygons: " + model.polygons.size());
+        System.out.println("Vertices: " + model.getVertices().size());
+        System.out.println("Texture vertices: " + model.getTextureVertices().size());
+        System.out.println("Normals: " + model.getNormals().size());
+        System.out.println("Polygons: " + model.getPolygons().size());
 
         System.out.println("\nSaving model back...");
 
-        Path outputFile = fileName.resolveSibling(String.format("%s_output.obj", fileObj));
+        Path outputFile = fileName.resolveSibling(String.format(Locale.ROOT, "%s_output.obj", fileObj));
         ObjWriter.write(model, outputFile.toString());
 
         System.out.println("Model saved to: " + outputFile);

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 public class ObjWriter {
 
@@ -31,14 +32,12 @@ public class ObjWriter {
         if (comment != null && !comment.isEmpty()) {
             sb.append("# ").append(comment).append("\n");
         }
-//        sb.append("# Vertices: ").append(model.vertices.size()).append("\n");
-//        sb.append("# Texture vertices: ").append(model.textureVertices.size()).append("\n");
-//        sb.append("# Normals: ").append(model.normals.size()).append("\n");
-//        sb.append("# Polygons: ").append(model.polygons.size()).append("\n\n");
 
         try {
-            for (Vector3f vertex : model.vertices) {
-                validateVertex(vertex, model.vertices.indexOf(vertex));
+            List<Vector3f> vertices = model.getVertices();
+            for (int i = 0; i < vertices.size(); i++) {
+                Vector3f vertex = vertices.get(i);
+                validateVertex(vertex, i);
                 sb.append("v ")
                         .append(formatFloatCompact(vertex.getX()))
                         .append(" ")
@@ -48,61 +47,81 @@ public class ObjWriter {
                         .append("\n");
             }
 
-            if (!model.vertices.isEmpty() && (!model.textureVertices.isEmpty() || !model.normals.isEmpty())) {
+            if (!vertices.isEmpty() &&
+                    ((model.getTextureVertices() != null && !model.getTextureVertices().isEmpty()) ||
+                            (model.getNormals() != null && !model.getNormals().isEmpty()))) {
                 sb.append("\n");
             }
 
-            for (Vector2f textureVertex : model.textureVertices) {
-                validateTextureVertex(textureVertex, model.textureVertices.indexOf(textureVertex));
-                sb.append("vt ")
-                        .append(formatFloatCompact(textureVertex.getX()))
-                        .append(" ")
-                        .append(formatFloatCompact(textureVertex.getY()))
-                        .append("\n");
+            List<Vector2f> textureVertices = model.getTextureVertices();
+            if (textureVertices != null) {
+                for (int i = 0; i < textureVertices.size(); i++) {
+                    Vector2f textureVertex = textureVertices.get(i);
+                    validateTextureVertex(textureVertex, i);
+                    sb.append("vt ")
+                            .append(formatFloatCompact(textureVertex.getX()))
+                            .append(" ")
+                            .append(formatFloatCompact(textureVertex.getY()))
+                            .append("\n");
+                }
             }
 
-            if (!model.textureVertices.isEmpty() && !model.normals.isEmpty()) {
+            if (textureVertices != null && !textureVertices.isEmpty() &&
+                    model.getNormals() != null && !model.getNormals().isEmpty()) {
                 sb.append("\n");
             }
 
-            for (Vector3f normal : model.normals) {
-                validateNormal(normal, model.normals.indexOf(normal));
-                sb.append("vn ")
-                        .append(formatFloatCompact(normal.getX()))
-                        .append(" ")
-                        .append(formatFloatCompact(normal.getY()))
-                        .append(" ")
-                        .append(formatFloatCompact(normal.getZ()))
-                        .append("\n");
+            List<Vector3f> normals = model.getNormals();
+            if (normals != null) {
+                for (int i = 0; i < normals.size(); i++) {
+                    Vector3f normal = normals.get(i);
+                    validateNormal(normal, i);
+                    sb.append("vn ")
+                            .append(formatFloatCompact(normal.getX()))
+                            .append(" ")
+                            .append(formatFloatCompact(normal.getY()))
+                            .append(" ")
+                            .append(formatFloatCompact(normal.getZ()))
+                            .append("\n");
+                }
             }
 
-            if ((!model.vertices.isEmpty() || !model.textureVertices.isEmpty() || !model.normals.isEmpty())
-                    && !model.polygons.isEmpty()) {
+            if ((!vertices.isEmpty() ||
+                    (textureVertices != null && !textureVertices.isEmpty()) ||
+                    (normals != null && !normals.isEmpty())) &&
+                    !model.getPolygons().isEmpty()) {
                 sb.append("\n");
             }
 
-            for (Polygon polygon : model.polygons) {
-                validatePolygon(polygon, model.polygons.indexOf(polygon),
-                        model.vertices.size(), model.textureVertices.size(), model.normals.size());
+            List<Polygon> polygons = model.getPolygons();
+            for (int i = 0; i < polygons.size(); i++) {
+                Polygon polygon = polygons.get(i);
+                validatePolygon(polygon, i,
+                        vertices.size(),
+                        textureVertices != null ? textureVertices.size() : 0,
+                        normals != null ? normals.size() : 0);
 
                 sb.append("f");
                 List<Integer> vertexIndices = polygon.getVertexIndices();
                 List<Integer> textureVertexIndices = polygon.getTextureVertexIndices();
                 List<Integer> normalIndices = polygon.getNormalIndices();
 
-                for (int i = 0; i < vertexIndices.size(); i++) {
-                    sb.append(" ");
-                    sb.append(vertexIndices.get(i) + 1);
+                boolean hasTextures = textureVertexIndices != null && !textureVertexIndices.isEmpty();
+                boolean hasNormals = normalIndices != null && !normalIndices.isEmpty();
 
-                    if (!textureVertexIndices.isEmpty() || !normalIndices.isEmpty()) {
+                for (int j = 0; j < vertexIndices.size(); j++) {
+                    sb.append(" ");
+                    sb.append(vertexIndices.get(j) + 1);
+
+                    if (hasTextures || hasNormals) {
                         sb.append("/");
 
-                        if (!textureVertexIndices.isEmpty()) {
-                            sb.append(textureVertexIndices.get(i) + 1);
+                        if (hasTextures) {
+                            sb.append(textureVertexIndices.get(j) + 1);
                         }
 
-                        if (!normalIndices.isEmpty()) {
-                            sb.append("/").append(normalIndices.get(i) + 1);
+                        if (hasNormals) {
+                            sb.append("/").append(normalIndices.get(j) + 1);;
                         }
                     }
                 }
@@ -127,7 +146,7 @@ public class ObjWriter {
             throw new ObjWriterException("Cannot format infinite value");
         }
 
-        String result = String.format("%.6f", value).replace(",", ".");
+        String result = String.format(Locale.ROOT, "%.6f", value);
 
         if (result.contains(".")) {
             result = result.replaceAll("0*$", "");
@@ -178,7 +197,7 @@ public class ObjWriter {
     }
 
     protected static void validatePolygon(Polygon polygon, int polyIndex, int vertexCount,
-                                        int textureVertexCount, int normalCount) {
+                                          int textureVertexCount, int normalCount) {
         if (polygon == null) {
             throw new ObjWriterException("Polygon at index " + polyIndex + " is null");
         }
@@ -208,33 +227,37 @@ public class ObjWriter {
             }
         }
 
-        if (!textureVertexIndices.isEmpty() && textureVertexIndices.size() != vertexIndices.size()) {
-            throw new ObjWriterException(
-                    "Polygon at index " + polyIndex + " has mismatched vertex and texture vertex counts"
-            );
-        }
-
-        for (int texIndex : textureVertexIndices) {
-            if (texIndex < 0 || texIndex >= textureVertexCount) {
+        if (textureVertexIndices != null && !textureVertexIndices.isEmpty()) {
+            if (textureVertexIndices.size() != vertexIndices.size()) {
                 throw new ObjWriterException(
-                        "Polygon at index " + polyIndex + " references invalid texture vertex index " +
-                                texIndex + " (available texture vertices: 0-" + (textureVertexCount - 1) + ")"
+                        "Polygon at index " + polyIndex + " has mismatched vertex and texture vertex counts"
                 );
+            }
+
+            for (int texIndex : textureVertexIndices) {
+                if (texIndex < 0 || texIndex >= textureVertexCount) {
+                    throw new ObjWriterException(
+                            "Polygon at index " + polyIndex + " references invalid texture vertex index " +
+                                    texIndex + " (available texture vertices: 0-" + (textureVertexCount - 1) + ")"
+                    );
+                }
             }
         }
 
-        if (!normalIndices.isEmpty() && normalIndices.size() != vertexIndices.size()) {
-            throw new ObjWriterException(
-                    "Polygon at index " + polyIndex + " has mismatched vertex and normal counts"
-            );
-        }
-
-        for (int normalIndex : normalIndices) {
-            if (normalIndex < 0 || normalIndex >= normalCount) {
+        if (normalIndices != null && !normalIndices.isEmpty()) {
+            if (normalIndices.size() != vertexIndices.size()) {
                 throw new ObjWriterException(
-                        "Polygon at index " + polyIndex + " references invalid normal index " +
-                                normalIndex + " (available normals: 0-" + (normalCount - 1) + ")"
+                        "Polygon at index " + polyIndex + " has mismatched vertex and normal counts"
                 );
+            }
+
+            for (int normalIndex : normalIndices) {
+                if (normalIndex < 0 || normalIndex >= normalCount) {
+                    throw new ObjWriterException(
+                            "Polygon at index " + polyIndex + " references invalid normal index " +
+                                    normalIndex + " (available normals: 0-" + (normalCount - 1) + ")"
+                    );
+                }
             }
         }
     }

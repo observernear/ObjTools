@@ -43,10 +43,10 @@ public class ObjReader {
 				// А еще это портит читаемость
 				// И не стоит забывать про тесты. Чем проще вам задать данные для теста, проверить, что метод рабочий,
 				// тем лучше.
-				case OBJ_VERTEX_TOKEN -> result.vertices.add(parseVertex(wordsInLine, lineInd));
-				case OBJ_TEXTURE_TOKEN -> result.textureVertices.add(parseTextureVertex(wordsInLine, lineInd));
-				case OBJ_NORMAL_TOKEN -> result.normals.add(parseNormal(wordsInLine, lineInd));
-				case OBJ_FACE_TOKEN -> result.polygons.add(parseFace(wordsInLine, lineInd));
+				case OBJ_VERTEX_TOKEN -> result.getVertices().add(parseVertex(wordsInLine, lineInd));
+				case OBJ_TEXTURE_TOKEN -> result.getTextureVertices().add(parseTextureVertex(wordsInLine, lineInd));
+				case OBJ_NORMAL_TOKEN -> result.getNormals().add(parseNormal(wordsInLine, lineInd));
+				case OBJ_FACE_TOKEN -> result.getPolygons().add(parseFace(wordsInLine, lineInd));
 				default -> {}
 			}
 		}
@@ -99,58 +99,73 @@ public class ObjReader {
 		}
 	}
 
-	protected static Polygon parseFace(final ArrayList<String> wordsInLineWithoutToken, int lineInd) {
-		ArrayList<Integer> onePolygonVertexIndices = new ArrayList<Integer>();
-		ArrayList<Integer> onePolygonTextureVertexIndices = new ArrayList<Integer>();
-		ArrayList<Integer> onePolygonNormalIndices = new ArrayList<Integer>();
+    protected static Polygon parseFace(final ArrayList<String> wordsInLineWithoutToken, int lineInd) {
+        ArrayList<Integer> onePolygonVertexIndices = new ArrayList<Integer>();
+        ArrayList<Integer> onePolygonTextureVertexIndices = new ArrayList<Integer>();
+        ArrayList<Integer> onePolygonNormalIndices = new ArrayList<Integer>();
 
-		for (String s : wordsInLineWithoutToken) {
-			parseFaceWord(s, onePolygonVertexIndices, onePolygonTextureVertexIndices, onePolygonNormalIndices, lineInd);
-		}
+        for (String s : wordsInLineWithoutToken) {
+            parseFaceWord(s, onePolygonVertexIndices, onePolygonTextureVertexIndices, onePolygonNormalIndices, lineInd);
+        }
 
-		Polygon result = new Polygon();
-		result.setVertexIndices(onePolygonVertexIndices);
-		result.setTextureVertexIndices(onePolygonTextureVertexIndices);
-		result.setNormalIndices(onePolygonNormalIndices);
-		return result;
-	}
+        if (onePolygonVertexIndices.size() < 3) {
+            throw new ObjReaderException("Polygon must have at least 3 vertices.", lineInd);
+        }
+
+        Polygon result = new Polygon();
+        result.setVertexIndices(onePolygonVertexIndices);
+
+        result.setTextureVertexIndices(onePolygonTextureVertexIndices.isEmpty() ? null : onePolygonTextureVertexIndices);
+
+        result.setNormalIndices(onePolygonNormalIndices.isEmpty() ? null : onePolygonNormalIndices);
+
+        return result;
+    }
 
 	// Обратите внимание, что для чтения полигонов я выделил еще один вспомогательный метод.
 	// Это бывает очень полезно и с точки зрения структурирования алгоритма в голове, и с точки зрения тестирования.
 	// В радикальных случаях не бойтесь выносить в отдельные методы и тестировать код из одной-двух строчек.
-	protected static void parseFaceWord(
-			String wordInLine,
-			ArrayList<Integer> onePolygonVertexIndices,
-			ArrayList<Integer> onePolygonTextureVertexIndices,
-			ArrayList<Integer> onePolygonNormalIndices,
-			int lineInd) {
-		try {
-			String[] wordIndices = wordInLine.split("/");
-			switch (wordIndices.length) {
-				case 1 -> {
-					onePolygonVertexIndices.add(Integer.parseInt(wordIndices[0]) - 1);
-				}
-				case 2 -> {
-					onePolygonVertexIndices.add(Integer.parseInt(wordIndices[0]) - 1);
-					onePolygonTextureVertexIndices.add(Integer.parseInt(wordIndices[1]) - 1);
-				}
-				case 3 -> {
-					onePolygonVertexIndices.add(Integer.parseInt(wordIndices[0]) - 1);
-					onePolygonNormalIndices.add(Integer.parseInt(wordIndices[2]) - 1);
-					if (!wordIndices[1].isEmpty()) {
-						onePolygonTextureVertexIndices.add(Integer.parseInt(wordIndices[1]) - 1);
-					}
-				}
-				default -> {
-					throw new ObjReaderException("Invalid element size.", lineInd);
-				}
-			}
+    protected static void parseFaceWord(
+            String wordInLine,
+            ArrayList<Integer> onePolygonVertexIndices,
+            ArrayList<Integer> onePolygonTextureVertexIndices,
+            ArrayList<Integer> onePolygonNormalIndices,
+            int lineInd) {
+        try {
+            String[] wordIndices = wordInLine.split("/");
+            switch (wordIndices.length) {
+                case 1 -> {
+                    // f v1 v2 v3
+                    onePolygonVertexIndices.add(Integer.parseInt(wordIndices[0]) - 1);
+                }
+                case 2 -> {
+                    // f v1/vt1 v2/vt2 v3/vt3
+                    onePolygonVertexIndices.add(Integer.parseInt(wordIndices[0]) - 1);
+                    onePolygonTextureVertexIndices.add(Integer.parseInt(wordIndices[1]) - 1);
+                }
+                case 3 -> {
+                    // f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3
+                    //  f v1//vn1 v2//vn2 v3//vn3
+                    onePolygonVertexIndices.add(Integer.parseInt(wordIndices[0]) - 1);
 
-		} catch(NumberFormatException e) {
-			throw new ObjReaderException("Failed to parse int value.", lineInd);
+                    if (!wordIndices[1].isEmpty()) {
+                        onePolygonTextureVertexIndices.add(Integer.parseInt(wordIndices[1]) - 1);
+                    }
 
-		} catch(IndexOutOfBoundsException e) {
-			throw new ObjReaderException("Too few arguments.", lineInd);
-		}
-	}
+                    if (!wordIndices[2].isEmpty()) {
+                        onePolygonNormalIndices.add(Integer.parseInt(wordIndices[2]) - 1);
+                    }
+                }
+                default -> {
+                    throw new ObjReaderException("Invalid element size.", lineInd);
+                }
+            }
+
+        } catch(NumberFormatException e) {
+            throw new ObjReaderException("Failed to parse int value.", lineInd);
+
+        } catch(IndexOutOfBoundsException e) {
+            throw new ObjReaderException("Too few arguments.", lineInd);
+        }
+    }
 }

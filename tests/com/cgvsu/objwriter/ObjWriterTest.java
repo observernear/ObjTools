@@ -24,12 +24,12 @@ public class ObjWriterTest {
     @Test
     public void testBasicOutputFormat() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 2.0f, 3.0f));
-        model.vertices.add(new Vector3f(4.0f, 5.0f, 6.0f));
+        model.getVertices().add(new Vector3f(1.0f, 2.0f, 3.0f));
+        model.getVertices().add(new Vector3f(4.0f, 5.0f, 6.0f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 1, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
 
@@ -52,11 +52,11 @@ public class ObjWriterTest {
     @Test
     public void testVertexOnlyOutput() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 0.0f, 0.0f));
+        model.getVertices().add(new Vector3f(1.0f, 0.0f, 0.0f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
         assertTrue(result.contains("v 1 0 0"));
@@ -67,13 +67,13 @@ public class ObjWriterTest {
     @Test
     public void testVertexWithTextureOutput() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 0.0f, 0.0f));
-        model.textureVertices.add(new Vector2f(0.5f, 0.5f));
+        model.getVertices().add(new Vector3f(1.0f, 0.0f, 0.0f));
+        model.getTextureVertices().add(new Vector2f(0.5f, 0.5f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
         polygon.setTextureVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
         assertTrue(result.contains("vt 0.5 0.5"));
@@ -83,13 +83,13 @@ public class ObjWriterTest {
     @Test
     public void testVertexWithNormalOutput() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 0.0f, 0.0f));
-        model.normals.add(new Vector3f(0.0f, 1.0f, 0.0f));
+        model.getVertices().add(new Vector3f(1.0f, 0.0f, 0.0f));
+        model.getNormals().add(new Vector3f(0.0f, 1.0f, 0.0f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
         polygon.setNormalIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
         assertTrue(result.contains("vn 0 1 0"));
@@ -99,15 +99,15 @@ public class ObjWriterTest {
     @Test
     public void testAllComponentsOutput() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 0.0f, 0.0f));
-        model.textureVertices.add(new Vector2f(0.5f, 0.5f));
-        model.normals.add(new Vector3f(0.0f, 1.0f, 0.0f));
+        model.getVertices().add(new Vector3f(1.0f, 0.0f, 0.0f));
+        model.getTextureVertices().add(new Vector2f(0.5f, 0.5f));
+        model.getNormals().add(new Vector3f(0.0f, 1.0f, 0.0f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
         polygon.setTextureVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
         polygon.setNormalIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
         assertTrue(result.contains("f 1/1/1"), "Should have vertex/texture/normal format");
@@ -117,11 +117,11 @@ public class ObjWriterTest {
     @Test
     public void testFileWriting() throws IOException {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 2.0f, 3.0f));
+        model.getVertices().add(new Vector3f(1.0f, 2.0f, 3.0f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         Path filePath = tempDir.resolve("test.obj");
         ObjWriter.write(model, filePath.toString());
@@ -142,11 +142,11 @@ public class ObjWriterTest {
     @Test
     public void testNaNValueHandling() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(Float.NaN, 0.0f, 0.0f));
+        model.getVertices().add(new Vector3f(Float.NaN, 0.0f, 0.0f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         ObjWriterException exception = assertThrows(ObjWriterException.class,
                 () -> ObjWriter.modelToString(model));
@@ -157,13 +157,13 @@ public class ObjWriterTest {
     @Test
     public void testIndexing() {
         Model model = new Model();
-        model.vertices.add(new Vector3f(1.0f, 0.0f, 0.0f)); // index 0
-        model.vertices.add(new Vector3f(0.0f, 1.0f, 0.0f)); // index 1
-        model.vertices.add(new Vector3f(0.0f, 0.0f, 1.0f)); // index 2
+        model.getVertices().add(new Vector3f(1.0f, 0.0f, 0.0f)); // index 0
+        model.getVertices().add(new Vector3f(0.0f, 1.0f, 0.0f)); // index 1
+        model.getVertices().add(new Vector3f(0.0f, 0.0f, 1.0f)); // index 2
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 1, 2))); // 0-based
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
         // Должны стать 1-based в выводе
@@ -175,15 +175,15 @@ public class ObjWriterTest {
     public void testOutputOrder() {
         Model model = new Model();
         // Добавляем в разном порядке
-        model.normals.add(new Vector3f(0.0f, 0.0f, 1.0f));
-        model.vertices.add(new Vector3f(1.0f, 0.0f, 0.0f));
-        model.textureVertices.add(new Vector2f(0.5f, 0.5f));
+        model.getNormals().add(new Vector3f(0.0f, 0.0f, 1.0f));
+        model.getVertices().add(new Vector3f(1.0f, 0.0f, 0.0f));
+        model.getTextureVertices().add(new Vector2f(0.5f, 0.5f));
 
         Polygon polygon = new Polygon();
         polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
         polygon.setTextureVertexIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
         polygon.setNormalIndices(new ArrayList<>(Arrays.asList(0, 0, 0)));
-        model.polygons.add(polygon);
+        model.getPolygons().add(polygon);
 
         String result = ObjWriter.modelToString(model);
 
