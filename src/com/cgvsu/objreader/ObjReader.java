@@ -156,9 +156,8 @@ public class ObjReader {
                         onePolygonNormalIndices.add(Integer.parseInt(wordIndices[2]) - 1);
                     }
                 }
-                default -> {
+                default ->
                     throw new ObjReaderException("Invalid element size.", lineInd);
-                }
             }
 
         } catch(NumberFormatException e) {

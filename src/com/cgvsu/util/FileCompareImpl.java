@@ -2,7 +2,7 @@ package com.cgvsu.util;
 
 import java.io.IOException;
 
-public interface FileCompareInt {
+public interface FileCompareImpl {
     void compareFiles() throws IOException;
     boolean areFilesIdentical() throws IOException;
     void printDifferenceSummary() throws IOException;

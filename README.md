@@ -33,7 +33,7 @@
 
 - ### FileCompareObj
   - ```java
-    public class FileCompareObj implements FileCompareInt {
+    public class FileCompareObj implements FileCompareImpl {
         public void compareFiles()
         public void printDifferenceSummary()
         public boolean areFilesIdentical()

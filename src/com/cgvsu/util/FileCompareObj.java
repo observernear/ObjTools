@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-public class FileCompareObj implements FileCompareInt {
+public class FileCompareObj implements FileCompareImpl {
     private Path firstFile;
     private Path secondFile;
 
